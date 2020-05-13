@@ -6,13 +6,8 @@
 // 1)TVertex - some info which store in Vertex
 // 2)TEdge - some info which store in edge
 // 3)TVertex, TEdge - lightweight
-template <typename TVertex,typename TEdge>
-void f(TVertex vertex){
-    std::cout<<vertex;
-}
-template <typename TVertex,typename TEdge,typename TFuncional = void >
+template<typename TVertex, typename TEdge>
 class Graph {
-
 public:
     struct Edge {
         TVertex dstVertex;//where should go
@@ -44,8 +39,9 @@ private:
 
     Vertex *_graph;
     std::size_t _count;
+
 public:
-    Graph():_graph(nullptr),_count(0){}
+    Graph() : _graph(nullptr), _count(0) {}
 
     std::size_t FindVertexIndex(TVertex vertex) const {
         for (std::size_t i = 0; i < _count; ++i)if (_graph[i].vertex == vertex)return i;
@@ -67,7 +63,7 @@ private:
 public:
     void AddEdge(TVertex srcVertex, TVertex dstVertex, TEdge edge) {
         const auto srcIndex = FindVertexIndexOrThrow(srcVertex);
-        const auto dstIndex = FindVertexIndexOrThrow(dstVertex);
+//        const auto dstIndex = FindVertexIndexOrThrow(dstVertex);
         Edge e(dstVertex, edge);
         _graph[srcIndex].edges = new EdgeNode(e, _graph[srcIndex].edges);//head insert
     }
@@ -92,7 +88,6 @@ public:
     }
 
     Edge GetEdge(TVertex srcVertex, std::size_t index) const {//?
-        std::size_t count = 0;
         auto node = _graph[FindVertexIndexOrThrow(srcVertex)].edges;
         for (size_t i = 0; i < index; ++i)
             node = node->next;
@@ -112,22 +107,96 @@ public:
         _graph = graph;
     }
 };
+
 template<typename TVertex, typename TEdge, typename TFunctional>
-void dfs(const Graph<TVertex,TEdge>& graph, TVertex begin,bool* used,std::size_t * stack,std::size_t &stackSize,TFunctional f) {
-        auto beginIndex = graph.FindVertexIndexOrThrow(begin);
-        used[beginIndex] = true;
-        f(graph.GetVertex(beginIndex));
-        const TVertex vertex=graph.GetVertex(beginIndex);
-        //auto tmp= getEdges(graph[beginIndex]);
-        for(std::size_t j=0;j<graph.getEdgeCount(vertex);++j){
-            beginIndex=graph.FindVertexIndexOrThrow(graph.GetEdge(vertex,j).dstVertex);
-            if(!used[beginIndex]) {
-                stack[stackSize++] = beginIndex;
-                used[beginIndex] = true;
-            }
-        }
-        while(stackSize > 0) {
-            auto vertexIndex = stack[--stackSize];
-            dfs(graph, graph.GetVertex(vertexIndex), used, stack,stackSize ,f);
+void dfs(const Graph<TVertex, TEdge> &graph, TVertex begin, bool *used, std::size_t *stack, std::size_t &stackSize,
+         TFunctional f) {
+    auto beginIndex = graph.FindVertexIndexOrThrow(begin);
+    used[beginIndex] = true;
+    f(graph.GetVertex(beginIndex));
+    const TVertex vertex = graph.GetVertex(beginIndex);
+    //auto tmp= getEdges(graph[beginIndex]);
+    for (std::size_t j = 0; j < graph.getEdgeCount(vertex); ++j) {
+        beginIndex = graph.FindVertexIndexOrThrow(graph.GetEdge(vertex, j).dstVertex);
+        if (!used[beginIndex]) {
+            stack[stackSize++] = beginIndex;
+            used[beginIndex] = true;
         }
     }
+    while (stackSize > 0) {
+        auto vertexIndex = stack[--stackSize];
+        dfs(graph, graph.GetVertex(vertexIndex), used, stack, stackSize, f);
+    }
+}
+
+template<typename TVertex, typename TEdge, typename TFunctional>
+void DepthFirstSearch(const Graph<TVertex, TEdge> &graph, TVertex begin, TFunctional f) {
+    auto count = graph.GetVertexCount();
+    auto stackSize = 0;
+    auto used = new bool[count];
+    for (std::size_t i = 0; i < count; ++i) {
+        used[i] = false;
+    }
+    auto stack = new std::size_t[count];
+    try {
+        auto vertexIndex = graph.FindVertexIndexOrThrow(begin);
+        used[vertexIndex] = true;
+        stack[stackSize++] = vertexIndex;
+        while (stackSize > 0) {
+            auto vertexInd = stack[--stackSize];
+            f(vertexInd);
+            auto vertex = graph.GetVertex(vertexInd);
+            for (std::size_t i = 0; i < graph.getEdgeCount(vertex); ++i) {
+                vertexInd = graph.FindVertexIndexOrThrow(graph.GetEdge(vertex, i).dstVertex);
+                if (!used[vertexInd]) {
+                    stack[stackSize++] = vertexInd;
+                    used[vertexInd] = true;
+                }
+            }
+        }
+    }
+    catch (...) {
+        delete[] used;
+        delete[] stack;
+    }
+    delete[] used;
+    delete[] stack;
+}
+
+template<typename TVertex, typename TEdge, typename TFunctional>
+void BreadthFirstSearch(const Graph<TVertex, TEdge> &graph, TVertex begin, TFunctional f) {
+    auto count = graph.GetVertexCount();
+    auto used = new bool[count];
+    auto queueSize = 0;
+    for (std::size_t i = 0; i < count; ++i) {
+        used[i] = false;
+    }
+    auto queue = new std::size_t[count];
+    try {
+        auto beginIndex = graph.FindVertexIndexOrThrow(begin);
+        used[beginIndex] = true;
+        queue[queueSize++] = beginIndex;
+        while (queueSize > 0) {
+            auto vertexIndex = queue[0];
+            for (std::size_t i = 0; i < queueSize - 1; ++i) {
+                queue[i] = queue[i + 1];
+            }
+            --queueSize;
+            auto vertex = graph.GetVertex(vertexIndex);
+            f(vertex);
+            for (std::size_t i = 0; i < graph.getEdgeCount(vertex); ++i) {
+                vertexIndex = graph.FindVertexIndexOrThrow(graph.GetEdge(vertex, i).dstVertex);
+                if (!used[vertexIndex]) {
+                    queue[queueSize++] = vertexIndex;
+                    used[vertexIndex] = true;
+                }
+            }
+        }
+    }
+    catch (...) {
+        delete[] used;
+        delete[] queue;
+    }
+    delete[] used;
+    delete[] queue;
+}
