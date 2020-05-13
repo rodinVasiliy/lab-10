@@ -45,6 +45,8 @@ private:
     Vertex *_graph;
     std::size_t _count;
 public:
+    Graph():_graph(nullptr),_count(0){}
+
     std::size_t FindVertexIndex(TVertex vertex) const {
         for (std::size_t i = 0; i < _count; ++i)if (_graph[i].vertex == vertex)return i;
         return _count;
