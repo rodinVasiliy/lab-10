@@ -21,14 +21,25 @@ int main(){
     graph.AddEdge( '7','8',0);
     graph.AddEdge( '3','4' ,0);
     graph.AddEdge( '4', '5',0);
-    bool used[9];
-    for(std::size_t i=0;i<9;++i){
+    auto vertexCount = graph.GetVertexCount();
+    auto used = new bool[vertexCount];
+    for(std::size_t i=0;i<vertexCount;++i){
         used[i]=false;
     }
-    std::size_t stack[9];
+    auto stack = new std::size_t[vertexCount];
     std::size_t stackSize=0;
-    dfs(graph,'0',used,stack,stackSize,[](auto vertex) {
+    dfs(graph,'3',used,stack,stackSize,[](auto vertex) {
        std::cout << vertex << ' ';
     });
     std::cout << std::endl;
+    DepthFirstSearch(graph,'0',[](auto vertex) {
+        std::cout << vertex << ' ';
+    });
+    std::cout << std::endl;
+    BreadthFirstSearch(graph,'0',[](auto vertex) {
+        std::cout << vertex << ' ';
+    });
+    std::cout << std::endl;
+    delete[] used;
+    delete[] stack;
 }
