@@ -1,202 +1,120 @@
-#pragma once
-
-#include <stdexcept>
+#include "Graph.h"
+#include "Locality.h"
 #include <iostream>
 
-// 1)TVertex - some info which store in Vertex
-// 2)TEdge - some info which store in edge
-// 3)TVertex, TEdge - lightweight
-template<typename TVertex, typename TEdge>
-class Graph {
-public:
-    struct Edge {
-        TVertex dstVertex;//where should go
-        TEdge edge;//some info which store in edge
-
-        Edge(const TVertex &dstVertex, const TEdge edge) : dstVertex(dstVertex), edge(edge) {}
-    };
-
-private:
-    struct EdgeNode {//node of list
-        Edge edge;
-        EdgeNode *next;
-
-        EdgeNode(const Edge &edge) : edge(edge), next(nullptr) {}
-
-        EdgeNode(Edge edge, EdgeNode *next) : edge(edge), next(next) {}
-
-    };
-
-    struct Vertex {
-        TVertex vertex;//info which store in vertex
-        EdgeNode *edges;//list
-
-        Vertex() : edges(nullptr) {}
-
-        Vertex(const TVertex &vertex) : vertex(vertex), edges(nullptr) {}
-
-    };
-
-    Vertex *_graph;
-    std::size_t _count;
-
-public:
-    Graph() : _graph(nullptr), _count(0) {}
-
-    std::size_t FindVertexIndex(TVertex vertex) const {
-        for (std::size_t i = 0; i < _count; ++i)if (_graph[i].vertex == vertex)return i;
-        return _count;
-    }
-
-    std::size_t FindVertexIndexOrThrow(TVertex vertex) const {
-        auto index = FindVertexIndex(vertex);
-        if (index == _count)throw std::invalid_argument("Vertex not found!");
-        return index;
-    }
-
-private:
-    //we can store more than one edge between two vertex
-    /*static EdgeNode *getEdges(Graph graph) {
-        return graph->edges;
-    }*/
-
-public:
-    void AddEdge(TVertex srcVertex, TVertex dstVertex, TEdge edge) {
-        const auto srcIndex = FindVertexIndexOrThrow(srcVertex);
-//        const auto dstIndex = FindVertexIndexOrThrow(dstVertex);
-        Edge e(dstVertex, edge);
-        _graph[srcIndex].edges = new EdgeNode(e, _graph[srcIndex].edges);//head insert
-    }
-
-    [[nodiscard]]std::size_t GetVertexCount() const {
-        return _count;
-    }
-
-    [[nodiscard]]TVertex GetVertex(std::size_t index) const {
-        return _graph[index].vertex;
-    }
-
-    std::size_t getEdgeCount(TVertex vertex) const {
-        std::size_t size = 0;
-        auto index = FindVertexIndexOrThrow(vertex);
-        auto tmp = _graph[index].edges;
-        while (tmp) {
-            ++size;
-            tmp = tmp->next;
-        }
-        return size;
-    }
-
-    Edge GetEdge(TVertex srcVertex, std::size_t index) const {//?
-        auto node = _graph[FindVertexIndexOrThrow(srcVertex)].edges;
-        for (size_t i = 0; i < index; ++i)
-            node = node->next;
-        return node->edge;
-    }
-
-
-    void AddVertex(TVertex vertex) {
-        const auto index = FindVertexIndex(vertex);
-        if (index != _count)
-            throw std::invalid_argument("Vertex already exists!");
-        auto graph = new Vertex[_count + 1];
-        for (std::size_t i = 0; i < _count; ++i)graph[i] = _graph[i];
-        graph[index] = vertex;
-        delete[] _graph;
-        ++_count;
-        _graph = graph;
-    }
-};
-
-template<typename TVertex, typename TEdge, typename TFunctional>
-void dfs(const Graph<TVertex, TEdge> &graph, TVertex begin, bool *used, std::size_t *stack, std::size_t &stackSize,
-         TFunctional f) {
-    auto beginIndex = graph.FindVertexIndexOrThrow(begin);
-    used[beginIndex] = true;
-    f(graph.GetVertex(beginIndex));
-    const TVertex vertex = graph.GetVertex(beginIndex);
-    //auto tmp= getEdges(graph[beginIndex]);
-    for (std::size_t j = 0; j < graph.getEdgeCount(vertex); ++j) {
-        beginIndex = graph.FindVertexIndexOrThrow(graph.GetEdge(vertex, j).dstVertex);
-        if (!used[beginIndex]) {
-            stack[stackSize++] = beginIndex;
-            used[beginIndex] = true;
-        }
-    }
-    while (stackSize > 0) {
-        auto vertexIndex = stack[--stackSize];
-        dfs(graph, graph.GetVertex(vertexIndex), used, stack, stackSize, f);
-    }
-}
-
-template<typename TVertex, typename TEdge, typename TFunctional>
-void DepthFirstSearch(const Graph<TVertex, TEdge> &graph, TVertex begin, TFunctional f) {
-    auto count = graph.GetVertexCount();
-    auto stackSize = 0;
-    auto used = new bool[count];
-    for (std::size_t i = 0; i < count; ++i) {
+int main() {
+    /* Graph<char, double> graph;
+     graph.AddVertex('0');
+     graph.AddVertex('1');
+     graph.AddVertex('2');
+     graph.AddVertex('3');
+     graph.AddVertex('4');
+     graph.AddVertex('5');
+     graph.AddVertex('6');
+     graph.AddVertex('7');
+     graph.AddVertex('8');
+     graph.AddEdge('0', '1', 5);
+     graph.AddEdge('0', '2', 55);
+     graph.AddEdge('2', '3', 30);
+     graph.AddEdge('2', '4', 4);
+     graph.AddEdge('2', '7', 3);
+     graph.AddEdge('7', '6', 41);
+     graph.AddEdge('7', '8', 55);
+     graph.AddEdge('3', '4', 2);
+     graph.AddEdge('4', '5', 13);
+     auto vertexCount = graph.GetVertexCount();
+     auto used = new bool[vertexCount];
+     for (std::size_t i = 0; i < vertexCount; ++i) {
+         used[i] = false;
+     }
+     auto stack = new std::size_t[vertexCount];
+     std::size_t stackSize = 0;
+     dfs(graph, '3', used, stack, stackSize, [](auto vertex) {
+         std::cout << vertex << ' ';
+     });
+     std::cout << std::endl;
+     DepthFirstSearch(graph, '0', [](auto vertex) {
+         std::cout << vertex << ' ';
+     });
+     std::cout << std::endl;
+     BreadthFirstSearch(graph, '0', [](auto vertex) {
+         std::cout << vertex << ' ';
+     });
+     std::cout << std::endl;
+     char *path = new char[vertexCount];
+     std::size_t *distance = new size_t[vertexCount];
+     //auto r = Dijkstra(graph, '0', '8', path, distance);
+     auto r = BellmanFord(graph, '2', '8', path, distance);
+     std::cout << r << std::endl;
+     std::cout << path << std::endl;
+     std::cout << *distance << std::endl;
+     delete[] used;
+     delete[] stack;
+     delete[] distance;*/
+    Graph<Locality, double> graph;
+    Locality vertex1("samara", 1000);
+    Locality vertex2("tolyatty", 1000);
+    Locality vertex3("sisran", 1000);
+    Locality vertex4("saratov", 1000);
+    Locality vertex5("moscov", 1000);
+    Locality vertex6("piter", 1000);
+    Locality vertex7("London", 1000);
+    Locality vertex8("LA", 1000);
+    Locality vertex9("San Paulo", 1000);
+    /*Locality vertex10("Milan", 1000);
+    Locality vertex11("Madrid", 1000);
+    Locality vertex12("Barcelona", 1000);*/
+    graph.AddVertex(vertex1);
+    graph.AddVertex(vertex2);
+    graph.AddVertex(vertex3);
+    graph.AddVertex(vertex4);
+    graph.AddVertex(vertex5);
+    graph.AddVertex(vertex6);
+    graph.AddVertex(vertex7);
+    graph.AddVertex(vertex8);
+    graph.AddVertex(vertex9);
+    graph.AddEdge(vertex1, vertex2, 5);
+    graph.AddEdge(vertex1, vertex3, 55);
+    graph.AddEdge(vertex3, vertex4, 30);
+    graph.AddEdge(vertex3, vertex5, 4);
+    graph.AddEdge(vertex4, vertex5, 3);
+    graph.AddEdge(vertex5, vertex6, 41);
+    graph.AddEdge(vertex8, vertex7, 55);
+    graph.AddEdge(vertex8, vertex9, 2);
+    graph.AddEdge(vertex3, vertex8, 13);
+    auto vertexCount = graph.GetVertexCount();
+    auto used = new bool[vertexCount];
+    for (std::size_t i = 0; i < vertexCount; ++i) {
         used[i] = false;
     }
-    auto stack = new std::size_t[count];
-    try {
-        auto vertexIndex = graph.FindVertexIndexOrThrow(begin);
-        used[vertexIndex] = true;
-        stack[stackSize++] = vertexIndex;
-        while (stackSize > 0) {
-            auto vertexInd = stack[--stackSize];
-            f(vertexInd);
-            auto vertex = graph.GetVertex(vertexInd);
-            for (std::size_t i = 0; i < graph.getEdgeCount(vertex); ++i) {
-                vertexInd = graph.FindVertexIndexOrThrow(graph.GetEdge(vertex, i).dstVertex);
-                if (!used[vertexInd]) {
-                    stack[stackSize++] = vertexInd;
-                    used[vertexInd] = true;
-                }
-            }
-        }
+    auto stack = new std::size_t[vertexCount];
+    std::size_t stackSize = 0;
+    std::cout << "DFS" << std::endl;
+    dfs(graph, vertex1, used, stack, stackSize, [](auto vertex) {
+        std::cout << vertex << ' ';
+    });
+    std::cout << std::endl;
+    std::cout << "DepthFirstSearch" << std::endl;
+    DepthFirstSearch(graph, vertex1, [](auto vertex) {
+        std::cout << vertex << ' ';
+    });
+    std::cout << std::endl;
+    std::cout << "BreadthFirstSearch" << std::endl;
+    BreadthFirstSearch(graph, vertex1, [](auto vertex) {
+        std::cout << vertex << ' ';
+    });
+    std::cout << std::endl;
+    Locality *path = new Locality[vertexCount];
+    std::size_t *distance = new size_t[vertexCount];
+    auto r = Dijkstra(graph, vertex1, vertex2, path, distance);
+   // auto v = BellmanFord(graph, vertex1, vertex2, path, distance);
+    std::cout << r << std::endl;
+    for(std::size_t i=0;i<(*distance);++i){
+        std::cout << *path << std::endl;
+        path=path+sizeof(Locality);
     }
-    catch (...) {
-        delete[] used;
-        delete[] stack;
-    }
+    std::cout << *distance << std::endl;
     delete[] used;
     delete[] stack;
-}
-
-template<typename TVertex, typename TEdge, typename TFunctional>
-void BreadthFirstSearch(const Graph<TVertex, TEdge> &graph, TVertex begin, TFunctional f) {
-    auto count = graph.GetVertexCount();
-    auto used = new bool[count];
-    auto queueSize = 0;
-    for (std::size_t i = 0; i < count; ++i) {
-        used[i] = false;
-    }
-    auto queue = new std::size_t[count];
-    try {
-        auto beginIndex = graph.FindVertexIndexOrThrow(begin);
-        used[beginIndex] = true;
-        queue[queueSize++] = beginIndex;
-        while (queueSize > 0) {
-            auto vertexIndex = queue[0];
-            for (std::size_t i = 0; i < queueSize - 1; ++i) {
-                queue[i] = queue[i + 1];
-            }
-            --queueSize;
-            auto vertex = graph.GetVertex(vertexIndex);
-            f(vertex);
-            for (std::size_t i = 0; i < graph.getEdgeCount(vertex); ++i) {
-                vertexIndex = graph.FindVertexIndexOrThrow(graph.GetEdge(vertex, i).dstVertex);
-                if (!used[vertexIndex]) {
-                    queue[queueSize++] = vertexIndex;
-                    used[vertexIndex] = true;
-                }
-            }
-        }
-    }
-    catch (...) {
-        delete[] used;
-        delete[] queue;
-    }
-    delete[] used;
-    delete[] queue;
+    delete[] distance;
 }
