@@ -1,6 +1,18 @@
 #include "Graph.h"
 #include "Locality.h"
 #include <iostream>
+#include <iomanip>
+
+void printGraph(const Graph<Locality *, double> &graph) {
+    for (std::size_t i = 0; i < graph.GetVertexCount(); ++i) {
+        std::cout << graph.GetVertex(i)->getName() << std::endl;
+        for (std::size_t j = 0; j < graph.getEdgeCount(graph.GetVertex(i)); ++j) {
+            std::cout << std::setw(5) << "->" << graph.GetEdge(graph.GetVertex(i), j).dstVertex->getName() << "("
+                      << graph.GetEdge(graph.GetVertex(i), j).edge << ")" << std::endl;
+        }
+        std::cout << std::endl;
+    }
+}
 
 int main() {
     /* Graph<char, double> graph;
@@ -51,7 +63,7 @@ int main() {
      delete[] used;
      delete[] stack;
      delete[] distance;*/
-    Graph<Locality, double> graph;
+    Graph<Locality *, double> graph;
     Locality vertex1("samara", 1000);
     Locality vertex2("tolyatty", 1000);
     Locality vertex3("sisran", 1000);
@@ -64,24 +76,24 @@ int main() {
     /*Locality vertex10("Milan", 1000);
     Locality vertex11("Madrid", 1000);
     Locality vertex12("Barcelona", 1000);*/
-    graph.AddVertex(vertex1);
-    graph.AddVertex(vertex2);
-    graph.AddVertex(vertex3);
-    graph.AddVertex(vertex4);
-    graph.AddVertex(vertex5);
-    graph.AddVertex(vertex6);
-    graph.AddVertex(vertex7);
-    graph.AddVertex(vertex8);
-    graph.AddVertex(vertex9);
-    graph.AddEdge(vertex1, vertex2, 5);
-    graph.AddEdge(vertex1, vertex3, 55);
-    graph.AddEdge(vertex3, vertex4, 30);
-    graph.AddEdge(vertex3, vertex5, 4);
-    graph.AddEdge(vertex4, vertex5, 3);
-    graph.AddEdge(vertex5, vertex6, 41);
-    graph.AddEdge(vertex8, vertex7, 55);
-    graph.AddEdge(vertex8, vertex9, 2);
-    graph.AddEdge(vertex3, vertex8, 13);
+    graph.AddVertex(&vertex1);
+    graph.AddVertex(&vertex2);
+    graph.AddVertex(&vertex3);
+    graph.AddVertex(&vertex4);
+    graph.AddVertex(&vertex5);
+    graph.AddVertex(&vertex6);
+    graph.AddVertex(&vertex7);
+    graph.AddVertex(&vertex8);
+    graph.AddVertex(&vertex9);
+    graph.AddEdge(&vertex1, &vertex2, 5);
+    graph.AddEdge(&vertex1, &vertex3, 55);
+    graph.AddEdge(&vertex3, &vertex4, 30);
+    graph.AddEdge(&vertex3, &vertex5, 4);
+    graph.AddEdge(&vertex4, &vertex5, 3);
+    graph.AddEdge(&vertex5, &vertex6, 41);
+    graph.AddEdge(&vertex8, &vertex7, 55);
+    graph.AddEdge(&vertex8, &vertex9, 2);
+    graph.AddEdge(&vertex3, &vertex8, 13);
     auto vertexCount = graph.GetVertexCount();
     auto used = new bool[vertexCount];
     for (std::size_t i = 0; i < vertexCount; ++i) {
@@ -90,31 +102,46 @@ int main() {
     auto stack = new std::size_t[vertexCount];
     std::size_t stackSize = 0;
     std::cout << "DFS" << std::endl;
-    dfs(graph, vertex1, used, stack, stackSize, [](auto vertex) {
-        std::cout << vertex << ' ';
-    });
+    try {
+        dfs(graph, &vertex1, used, stack, stackSize, [](auto vertex) {
+            std::cout << *vertex << ' ';
+        });
+    }
+    catch (...) {
+        delete[] used;
+        delete[] stack;
+    }
     std::cout << std::endl;
     std::cout << "DepthFirstSearch" << std::endl;
-    DepthFirstSearch(graph, vertex1, [](auto vertex) {
-        std::cout << vertex << ' ';
+    DepthFirstSearch(graph, &vertex1, [](auto vertex) {
+        std::cout << *vertex << ' ';
     });
     std::cout << std::endl;
     std::cout << "BreadthFirstSearch" << std::endl;
-    BreadthFirstSearch(graph, vertex1, [](auto vertex) {
-        std::cout << vertex << ' ';
+    BreadthFirstSearch(graph, &vertex1, [](auto vertex) {
+        std::cout << *vertex << ' ';
     });
     std::cout << std::endl;
-    Locality *path = new Locality[vertexCount];
+    Locality **path = new Locality *[vertexCount];
     std::size_t *distance = new size_t[vertexCount];
-    auto r = Dijkstra(graph, vertex1, vertex2, path, distance);
-   // auto v = BellmanFord(graph, vertex1, vertex2, path, distance);
+    auto r = Dijkstra(graph, &vertex1, &vertex7, path, distance);
+    // auto v = BellmanFord(graph, vertex1, vertex2, path,  distance);
     std::cout << r << std::endl;
-    for(std::size_t i=0;i<(*distance);++i){
-        std::cout << *path << std::endl;
-        path=path+sizeof(Locality);
+    for (std::size_t i = 0; i < (*distance); ++i) {
+        std::cout << *path[i] << std::endl;
+//        path = path + sizeof(Locality);
     }
     std::cout << *distance << std::endl;
+    auto edge = 10;
+    ///graph.DeleteEdge(vertex1,vertex2,edge);
+    //graph.DeleteVertex(&vertex3);
+    printGraph(graph);
+    Locality vertex10("mama", 10);
+    graph.EditVertex(&vertex1, &vertex10);
+    graph.EditEdge(vertex1, graph.GetEdge(&vertex1, 0).edge, 100);
+    printGraph(graph);
     delete[] used;
     delete[] stack;
     delete[] distance;
+
 }
