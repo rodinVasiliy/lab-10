@@ -63,12 +63,30 @@ private:
     }*/
 
 public:
+    ~Graph() {
+        clear();
+    }
+
+    void clear() {
+        /* for (std::size_t i = 0; i < _count; ++i) {
+             for (std::size_t j = 0; j < getEdgeCount(_graph[i].vertex); ++j) {
+                 this->DeleteEdge(_graph[i].vertex,this->GetEdge(_graph[i].vertex,j).dstVertex,GetEdge(_graph[i].vertex,j).edge);
+             }
+             _graph[i].edges= nullptr;
+         }
+         _count = 0;*/
+        delete[] _graph;
+        _graph = nullptr;
+        _count = 0;
+    }
+
     void AddEdge(TVertex srcVertex, TVertex dstVertex, TEdge edge) {
         const auto srcIndex = FindVertexIndexOrThrow(srcVertex);
-     //   const auto dstIndex = FindVertexIndexOrThrow(dstVertex);
+        //   const auto dstIndex = FindVertexIndexOrThrow(dstVertex);
         Edge e(dstVertex, edge);
         _graph[srcIndex].edges = new EdgeNode(e, _graph[srcIndex].edges);//head insert
     }
+
 
     [[nodiscard]]std::size_t GetVertexCount() const {
         return _count;
@@ -107,6 +125,105 @@ public:
         delete[] _graph;
         ++_count;
         _graph = graph;
+    }
+
+    void DeleteEdge(TVertex srcVertex, TVertex dstVertex) {
+        const auto srcIndex = FindVertexIndexOrThrow(srcVertex);
+        EdgeNode *edgeNode = _graph[srcIndex].edges;
+        if (!edgeNode)throw "edge not found";
+        if (edgeNode->edge.dstVertex == dstVertex) {
+            _graph[srcIndex].edges = _graph[srcIndex].edges->next;
+            delete edgeNode;
+            return;
+        }
+        while (edgeNode->next && edgeNode->next->edge.dstVertex != dstVertex)edgeNode = edgeNode->next;// 8 9 88 99
+        if (edgeNode->next == nullptr)throw "edge not found";
+        auto tmp = edgeNode->next;
+        edgeNode->next = edgeNode->next->next;
+        delete tmp;
+    }
+
+    void DeleteVertex(TVertex vertex) {
+        const auto index = FindVertexIndexOrThrow(vertex);
+        for (std::size_t i = 0; i < _count; ++i) {
+            if (i != index) {
+                for (std::size_t j = 0; j < getEdgeCount(_graph[i].vertex); ++j) {
+                    auto edge = this->GetEdge(_graph[i].vertex, j);
+                    if (edge.dstVertex == vertex)DeleteEdge(_graph[i].vertex, vertex);
+                }
+            }
+        }
+        auto graph = new Vertex[_count - 1];
+        for (std::size_t i = 0; i < index; ++i) {
+            graph[i] = _graph[i];
+        }
+        for (std::size_t i = index; i < _count - 1; ++i) {
+            graph[i] = _graph[i + 1];
+        }
+        delete[] _graph;
+        --_count;
+        _graph = graph;
+    }
+
+    void EditEdge(TVertex& vertex, TEdge& oldEdge, TEdge& newEdge) {
+        auto vertexIndex = FindVertexIndexOrThrow(vertex);
+        for (std::size_t i = 0; i < this->getEdgeCount(_graph[vertexIndex].vertex); ++i) {
+            auto edgeNode = this->GetEdge(_graph[vertexIndex].vertex, i);
+            if (edgeNode.edge == oldEdge) {
+                edgeNode.edge = newEdge;
+                std::cout << edgeNode.edge << std::endl;
+                return;
+            }
+        }
+        throw "Edge not Find";
+    }
+
+    void EditVertex(TVertex oldVertex, TVertex newVertex) {
+        auto vertexIndex = FindVertexIndexOrThrow(oldVertex);
+        *oldVertex = *newVertex;
+        return;
+    }
+
+    /*  bool DelVertex(TVertex vertex) {
+          auto vertexIndex = this->FindVertexIndexOrThrow(vertex);
+                  auto graph = new Vertex[_count - 1];
+                  for (std::size_t i = 0; i < vertexIndex; ++i) {
+                      graph[i] = _graph[i];
+                  }
+                  for (std::size_t i = vertexIndex; i < _count - 1; ++i) {
+                      graph[i] = _graph[i + 1];
+                  }
+  *//*for (auto j = 0; j < _count; ++j) {
+DelEdge(_graph[i].vertex, vertex)
+}*//*
+                delete[] _graph;
+                _graph = graph;
+                --_count;
+                return true;
+            }
+        return false;
+    }
+*/
+    bool DelEdge(TVertex srcVertex, TVertex dstVertex) {
+        auto node = _graph[GetVertexIndexOrThrow(srcVertex)].edges;
+        if (node->edge.dstVertex == dstVertex) {
+            auto tmp = node;
+            node = node->next;
+            delete tmp;
+            return true;
+        } else {
+            while (node->next->edge.dstVertex != dstVertex) {
+                node = node->next;
+                if (node == nullptr)
+                    return false;
+            }
+            if (node->edge.dstVertex == dstVertex) {
+                auto tmp = node->next;
+                node->next = node->next->next;
+                delete tmp;
+                return true;
+            }
+        }
     }
 };
 
