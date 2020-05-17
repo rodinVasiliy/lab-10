@@ -84,9 +84,11 @@ public:
         _name = nullptr;
     }
 
-    void Print() const;
+
 
 };
+
+void Print() ;
 
 std::ostream &operator<<(std::ostream &out, const Locality &rhs);
 
