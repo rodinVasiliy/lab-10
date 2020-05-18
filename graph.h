@@ -114,6 +114,13 @@ public:
         return node->edge;
     }
 
+    /*Edge GetEdge(TVertex srcVertex, std::size_t index) {//?
+        auto node = _graph[FindVertexIndexOrThrow(srcVertex)].edges;
+        for (size_t i = 0; i < index; ++i)
+            node = node->next;
+        return node->edge;
+    }*/
+
 
     void AddVertex(TVertex vertex) {
         const auto index = FindVertexIndex(vertex);
@@ -165,35 +172,62 @@ public:
         _graph = graph;
     }
 
-    void EditEdge(TVertex& vertex, TEdge& oldEdge, TEdge& newEdge) {
+    void EditEdge(TVertex vertex,TVertex dstVertex, TEdge oldEdge, TEdge newEdge) {
         auto vertexIndex = FindVertexIndexOrThrow(vertex);
         for (std::size_t i = 0; i < this->getEdgeCount(_graph[vertexIndex].vertex); ++i) {
-            auto edgeNode = this->GetEdge(_graph[vertexIndex].vertex, i);
-            if (edgeNode.edge == oldEdge) {
-                edgeNode.edge = newEdge;
-                std::cout << edgeNode.edge << std::endl;
+            auto EdgeNode = _graph[vertexIndex].edges;
+            if (EdgeNode->edge.edge == oldEdge&&EdgeNode->edge.dstVertex==dstVertex) {
+                EdgeNode->edge.edge = newEdge;
                 return;
-            }
+            } else EdgeNode = EdgeNode->next;
+        }
+        throw "Edge not Find";
+    }
+    void EditEdge(TVertex vertex, TVertex OldDstVertex,TEdge oldEdge,TVertex newDstVertex, TEdge newEdge) {
+        auto vertexIndex = FindVertexIndexOrThrow(vertex);
+        auto newDstIndex = FindVertexIndexOrThrow(newDstVertex);
+        for (std::size_t i = 0; i < this->getEdgeCount(_graph[vertexIndex].vertex); ++i) {
+            auto EdgeNode = _graph[vertexIndex].edges;
+            if (EdgeNode->edge.edge == oldEdge&&EdgeNode->edge.dstVertex==OldDstVertex) {
+                EdgeNode->edge.edge = newEdge;
+                EdgeNode->edge.dstVertex = newDstVertex;
+                return;
+            } else EdgeNode = EdgeNode->next;
         }
         throw "Edge not Find";
     }
 
     void EditVertex(TVertex oldVertex, TVertex newVertex) {
         auto vertexIndex = FindVertexIndexOrThrow(oldVertex);
+        auto newVertexIndex = FindVertexIndex(newVertex);
+        if(newVertexIndex!=_count)throw"vertex already exist";
         *oldVertex = *newVertex;
         return;
     }
+/* void EditEdge(TVertex srcVertex, TVertex dstVertex, TVertex newDstVertex,TEdge edge) {
+    DeleteEdge(srcVertex, dstVertex);
+     AddEdge(srcVertex, newDstVertex, edge);
+ }
+ void EditEdge(TVertex srcVertex,TVertex dstVertex,TEdge edge){
+     DeleteEdge(srcVertex,dstVertex);
+     AddEdge(srcVertex,dstVertex,edge);
+ }*/
 
-    /*  bool DelVertex(TVertex vertex) {
-          auto vertexIndex = this->FindVertexIndexOrThrow(vertex);
-                  auto graph = new Vertex[_count - 1];
-                  for (std::size_t i = 0; i < vertexIndex; ++i) {
-                      graph[i] = _graph[i];
-                  }
-                  for (std::size_t i = vertexIndex; i < _count - 1; ++i) {
-                      graph[i] = _graph[i + 1];
-                  }
-  *//*for (auto j = 0; j < _count; ++j) {
+/*void EditVertex(TVertex oldVertex, TVertex newVertex) {
+    auto index = FindVertexIndexOrThrow(oldVertex);
+    _graph[index].vertex = newVertex;
+}*/
+
+/*  bool DelVertex(TVertex vertex) {
+      auto vertexIndex = this->FindVertexIndexOrThrow(vertex);
+              auto graph = new Vertex[_count - 1];
+              for (std::size_t i = 0; i < vertexIndex; ++i) {
+                  graph[i] = _graph[i];
+              }
+              for (std::size_t i = vertexIndex; i < _count - 1; ++i) {
+                  graph[i] = _graph[i + 1];
+              }
+*//*for (auto j = 0; j < _count; ++j) {
 DelEdge(_graph[i].vertex, vertex)
 }*//*
                 delete[] _graph;
@@ -204,27 +238,7 @@ DelEdge(_graph[i].vertex, vertex)
         return false;
     }
 */
-    bool DelEdge(TVertex srcVertex, TVertex dstVertex) {
-        auto node = _graph[GetVertexIndexOrThrow(srcVertex)].edges;
-        if (node->edge.dstVertex == dstVertex) {
-            auto tmp = node;
-            node = node->next;
-            delete tmp;
-            return true;
-        } else {
-            while (node->next->edge.dstVertex != dstVertex) {
-                node = node->next;
-                if (node == nullptr)
-                    return false;
-            }
-            if (node->edge.dstVertex == dstVertex) {
-                auto tmp = node->next;
-                node->next = node->next->next;
-                delete tmp;
-                return true;
-            }
-        }
-    }
+
 };
 
 template<typename TVertex, typename TEdge, typename TFunctional>
