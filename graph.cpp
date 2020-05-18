@@ -1,7 +1,7 @@
-#include "Graph.h"
-#include "Locality.h"
-#include <iostream>
-#include <iomanip>
+    #include "Graph.h"
+    #include "Locality.h"
+    #include <iostream>
+    #include <iomanip>
 
 void printGraph(const Graph<Locality *, double> &graph) {
     for (std::size_t i = 0; i < graph.GetVertexCount(); ++i) {
@@ -73,9 +73,6 @@ int main() {
     Locality vertex7("London", 1000);
     Locality vertex8("LA", 1000);
     Locality vertex9("San Paulo", 1000);
-    /*Locality vertex10("Milan", 1000);
-    Locality vertex11("Madrid", 1000);
-    Locality vertex12("Barcelona", 1000);*/
     graph.AddVertex(&vertex1);
     graph.AddVertex(&vertex2);
     graph.AddVertex(&vertex3);
@@ -132,13 +129,12 @@ int main() {
 //        path = path + sizeof(Locality);
     }
     std::cout << *distance << std::endl;
-    auto edge = 10;
     ///graph.DeleteEdge(vertex1,vertex2,edge);
     //graph.DeleteVertex(&vertex3);
     printGraph(graph);
     Locality vertex10("mama", 10);
     graph.EditVertex(&vertex1, &vertex10);
-    graph.EditEdge(vertex1, graph.GetEdge(&vertex1, 0).edge, 100);
+    graph.EditEdge(&vertex1,&vertex3,55,&vertex5 ,100);
     printGraph(graph);
     delete[] used;
     delete[] stack;
